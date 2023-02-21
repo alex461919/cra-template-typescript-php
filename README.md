@@ -1,20 +1,60 @@
-# cra-template-typescript
+# cra-template-typescript-php
 
-This is the official TypeScript template for [Create React App](https://github.com/facebook/create-react-app).
+Задача - автоматизировать включение SPA приложений, собранных с помощью CRA, в качестве фрагментов/виджетов в страницы сайта на bitrix. Готовых решений в интернете не нашлось, максимум, что предлагается - сделать eject и далее править конфиги webpack.
+Вариант так себе, не очень. В дальнейшем сопровождать и масштабировать замучаешься.
 
-To use this template, add `--template typescript` when creating a new app.
+Здесь нам понадобится пакет [@craco/craco](https://github.com/dilanx/craco), чтобы переопределить стандартную конфигурацию CRA. Чтобы все стало совсем уж заавтоматизированно, пришлось сделать свой кастомный шаблон на базе [cra-template-typescript](https://github.com/facebook/create-react-app/tree/main/packages/cra-template-typescript).
 
-For example:
+## Установка и настройка
 
-```sh
-npx create-react-app my-app --template typescript
+`npx create-react-app my-app --template git+https://git@github.com/alex461919/cra-template-typescript-php.git`
 
-# or
+### `npm run start`
 
-yarn create react-app my-app --template typescript
+Работает в стандартном режиме. Если приложение обменивается данными с бэкендом по REST, то проблем при отладке не будет.
+
+### `npm run build`
+
+Сборка в production режиме в соответствии с настройками.
+
+### Настройки в файле `.env`
+
+Папка сайта, куда будут сложены скрипты, стили и php страница с внедренными элементами link и script.
+`BUILD_PATH=/var/www/site/section/page`
+Путь для загрузки скриптов и стилей, но тут, смотря как их внедрять. Важно, если используется BrowserRouter.
+`PUBLIC_URL=/`
+`GENERATE_SOURCEMAP=false`
+Исходный шаблон страницы в папке src, куда будем внедрять скрипты. Не обязательно именно php файл, можно и другой тип.
+`APP_TEMPLATE=index.php`
+
+### Внедрение скриптов в шаблон
+
+#### Штатный пример для HtmlWebpackPlugin:
+
+```html
+<% for (var item in htmlWebpackPlugin.files.css) { %>
+<link
+  href="<%= htmlWebpackPlugin.files.css[item] %>"
+  type="text/css"
+  rel="stylesheet"
+/>
+<% } %> <% for (var item in htmlWebpackPlugin.files.js ) { %>
+<script defer src="<%= htmlWebpackPlugin.files.js[item] %>"></script>
+<% } %>
 ```
 
-For more information, please refer to:
+PUBLIC_URL должен быть корректно прописан.
 
-- [Getting Started](https://create-react-app.dev/docs/getting-started) – How to create a new app.
-- [User Guide](https://create-react-app.dev) – How to develop apps bootstrapped with Create React App.
+#### Если это страница битрикса, можно так:
+
+```php
+$dir=substr(__DIR__, strlen($_SERVER['DOCUMENT_ROOT']));
+<% for (var item in htmlWebpackPlugin.files.css) { %>
+    Asset::getInstance()->addCss($dir . "<%= htmlWebpackPlugin.files.css[item] %>");
+<% } %>
+<% for (var item in htmlWebpackPlugin.files.js ) { %>
+    Asset::getInstance()->addJs($dir .  "<%= htmlWebpackPlugin.files.js[item] %>");
+<% } %>
+```
+
+PUBLIC_URL не обязателен. Путь задается относительно места расположения страницы.
