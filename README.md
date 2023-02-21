@@ -33,7 +33,7 @@
 
 ### Внедрение скриптов в шаблон
 
-#### Штатный пример для HtmlWebpackPlugin:
+#### Стандартный пример для HtmlWebpackPlugin:
 
 ```html
 <% for (var item in htmlWebpackPlugin.files.css) { %>
