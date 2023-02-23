@@ -5,10 +5,6 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 import { addPlugins, removePlugins, pluginByName } from "@craco/craco";
 import dotenv from "dotenv";
 
-function isObject(value: unknown): value is object {
-  return value !== null && typeof value === "object";
-}
-
 const config: CracoConfig = {
   webpack: {
     configure: (webpackConfig, { env, paths }) => {
@@ -19,10 +15,13 @@ const config: CracoConfig = {
         dotenv.config({ path: paths.dotenv }).parsed?.APP_TEMPLATE ||
         "index.html";
       const match = /\.(\w+)$/.exec(appTemplateFileName);
+
       const fileExtension = match && match[1] && match[1].toLowerCase();
+
       if (!fileExtension) {
         throw new Error(`Unknown template type. ${appTemplateFileName} `);
       }
+
       const appTemplatePath = path.resolve(
         paths.appPublic,
         appTemplateFileName
@@ -38,7 +37,6 @@ const config: CracoConfig = {
       ) {
         return webpackConfig;
       }
-
       removePlugins(webpackConfig, pluginByName("HtmlWebpackPlugin"));
       addPlugins(webpackConfig, [
         new HtmlWebpackPlugin({
@@ -50,15 +48,13 @@ const config: CracoConfig = {
         }),
       ]);
       webpackConfig.module?.rules?.forEach((rule) => {
-        if (isObject(rule) && Array.isArray(rule.oneOf)) {
-          rule.oneOf.forEach((oneOfRule) => {
-            if (
-              isObject(rule) &&
-              oneOfRule.type === "asset/resource" &&
-              Array.isArray(oneOfRule.exclude)
-            ) {
-              oneOfRule.exclude.push(new RegExp(`\\.${fileExtension}$`));
-            }
+        if (
+          rule !== null &&
+          typeof rule === "object" &&
+          Array.isArray(rule.oneOf)
+        ) {
+          rule.oneOf.splice(-1, 0, {
+            test: new RegExp(`\\.${fileExtension}$`),
           });
         }
       });
